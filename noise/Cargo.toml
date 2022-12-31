@@ -9,4 +9,6 @@ edition = "2018"
 [dependencies]
 clap = "2"
 lazy_static = "1.4.0"
-snow = { version = "0.6.1", features=["ring-accelerated"]}
+snow = { version = "0.9", features=["ring-accelerated"]}
+chrono = "0.4"
+tokio = { version = "1", features = ["full"] }
