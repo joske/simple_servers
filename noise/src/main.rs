@@ -64,6 +64,8 @@ async fn handle_client(mut stream: TcpStream) -> Result<(), Box<dyn Error>> {
     while let Ok(msg) = recv(&mut stream) {
         let len = noise.read_message(&msg, &mut buf)?;
         println!("client said: {}", String::from_utf8_lossy(&buf[..len]));
+        let len = noise.write_message("Yes!".as_bytes(), &mut buf)?;
+        send(&mut stream, &buf[..len]);
     }
     println!("connection closed");
     Ok(())
