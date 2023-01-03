@@ -1,11 +1,11 @@
-use lazy_static::lazy_static;
 use clap::App;
+use lazy_static::lazy_static;
 use snow::params::NoiseParams;
 use snow::Builder;
-use tokio::io::{AsyncReadExt, AsyncWriteExt};
-use tokio::net::{TcpListener, TcpStream};
 use std::error::Error;
 use std::net::SocketAddr;
+use tokio::io::{AsyncReadExt, AsyncWriteExt};
+use tokio::net::{TcpListener, TcpStream};
 
 static SECRET: &'static [u8] = b"XTSPPFrCk7sZmBFm8Hm6cXjjS7Ddd3PV";
 lazy_static! {
@@ -19,7 +19,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .get_matches();
 
     if matches.is_present("server") {
-        run_server().await;
+        run_server().await?;
     } else {
         run_client().await?;
     }
@@ -27,18 +27,23 @@ async fn main() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-async fn run_server() {
+async fn run_server() -> Result<(), Box<dyn Error>> {
     // wait on client's arrival
     println!("Listening on 0.0.0.0:9999");
-    let tcp_listener = TcpListener::bind("0.0.0.0:9999").await.unwrap();
+    let tcp_listener = TcpListener::bind("0.0.0.0:9999").await?;
     loop {
-        let (stream, addr) = tcp_listener.accept().await.unwrap();
-        tokio::spawn(async move {
-            handle_client(stream, addr)
-                .await
-                .map_err(|e| eprintln!("error: {:?}", e))
-                .ok();
-        });
+        if let Some((stream, addr)) = tcp_listener
+            .accept()
+            .await
+            .map_err(|e| eprintln!("error during accept: {:?}", e)).ok()
+        {
+            tokio::spawn(async move {
+                handle_client(stream, addr)
+                    .await
+                    .map_err(|e| eprintln!("error handling client: {:?}", e))
+                    .ok();
+            });
+        }
     }
 }
 
@@ -72,7 +77,7 @@ async fn handle_client(mut stream: TcpStream, addr: SocketAddr) -> Result<(), Bo
     Ok(())
 }
 
-async fn run_client() -> Result<(), Box<dyn Error>>{
+async fn run_client() -> Result<(), Box<dyn Error>> {
     let mut buf = vec![0u8; 1024];
 
     // initialize initiator
